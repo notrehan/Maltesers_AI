@@ -7,7 +7,10 @@
 
 body {
   font-family: "Inter", Arial, sans-serif;
-  background: #ffffff;
+  background-color: #ffffff;
+  background-image:
+    radial-gradient(circle at top right, rgba(255, 106, 0, 0.475) 0%, transparent 40%),
+    radial-gradient(circle at bottom left, rgba(255, 106, 0, 0.66) 0%, transparent 40%);
   color: #222;
   height: 100vh;
   display: flex;
