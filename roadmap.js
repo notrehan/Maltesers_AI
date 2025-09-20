@@ -1,6 +1,6 @@
 const urlParams = new URLSearchParams(window.location.search);
 const topic = urlParams.get("topic");
-const stepsContainer = document.getElementById("steps");
+const stepsContainer = document.getElementById("stepsContainer");
 
 async function generateRoadmap(topic) {
   if (!topic) {
