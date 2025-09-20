@@ -25,12 +25,13 @@ async function generateRoadmap(topic) {
     }
 
     const roadmap = json.roadmap;
-    stepsContainer.innerHTML = Object.entries(roadmap).map(([key, step], i) => `
+
+    // Render each step as a card
+    stepsContainer.innerHTML = roadmap.map((step, i) => `
       <div class="card">
-        <strong>${key}:</strong> ${step.task || step}
+        <strong>Step ${i + 1}:</strong> ${step.task || step}
       </div>
     `).join("");
-    
   } catch (error) {
     console.error(error);
     stepsContainer.innerHTML = "<p class='placeholder'>❌ Error generating roadmap.</p>";

@@ -21,11 +21,32 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "system",
-            content: "You return ONLY valid JSON in a clean roadmap format (weeks, tasks, resources)."
+            content: `You are an AI that generates structured JSON learning roadmaps.
+Return ONLY valid JSON in this format:
+
+{
+  "weeks": [
+    {
+      "title": "Week 1–3: Fundamentals of Flutter",
+      "tasks": [
+        {"icon": "📚", "text": "Study the basics of Flutter, including its architecture and core concepts."},
+        {"icon": "🛠️", "text": "Practice setting up the Flutter development environment and creating your first simple app."}
+      ],
+      "resources": [
+        {"icon": "📖", "title": "Flutter Official Documentation", "link": "https://flutter.dev/docs"},
+        {"icon": "▶️", "title": "Flutter Crash Course for Beginners", "query": "Flutter crash course for beginners"}
+      ]
+    }
+  ]
+}
+
+Important rules:
+- For YouTube, NEVER provide direct links.
+- Instead, provide a "query" string.`
           },
           {
             role: "user",
-            content: `Create a detailed learning roadmap for: ${topic}`
+            content: `Create a detailed learning roadmap for ${topic}`
           }
         ]
       })
