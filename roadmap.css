@@ -1,0 +1,101 @@
+/* Main content for roadmap page */
+.main {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 50px;
+}
+
+.center-box {
+  max-width: 700px;
+  width: 100%;
+  text-align: center;
+  padding: 0 20px;
+}
+
+/* Roadmap steps */
+#stepsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+#stepsContainer .card {
+  background: #f0f0f0;
+  color: #222;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  line-height: 1.5;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+.card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #2c2c2c;
+  border-bottom: 2px solid #eee;
+  padding-bottom: 8px;
+}
+
+.tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.task {
+  background: #f9f9f9;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.task .icon {
+  font-size: 1.2rem;
+}
+
+.resources {
+  margin-top: 12px;
+}
+
+.resources h4 {
+  margin-bottom: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.resource {
+  background: #fdfdfd;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.resource .icon {
+  font-size: 1.3rem;
+}
+
+.resource a {
+  text-decoration: none;
+  font-weight: 500;
+  color: #0d8c6b;
+}
+

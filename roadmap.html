@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Maltesers.ai Roadmap</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="roadmap.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <img src="/images/logo.ico" alt="Maltesers.ai Logo" class="logo-img"/>
+        <span class="logo-text">Maltesers.ai</span>
+      </div>
+      <div class="nav">
+        <button class="icon-btn" onclick="window.location.href='index.html'" title="Back">
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <button class="icon-btn" title="Chat">
+          <i class="fas fa-comment-dots"></i>
+        </button>
+      </div>
+    </aside>
+
+
+    <!-- Main -->
+    <main class="main">
+      <div class="center-box" id="roadmapContainer">
+        <h1 class="title">Roadmap</h1>
+        <p class="subtitle" id="topicTitle"></p>
+        <div id="stepsContainer"></div>
+      </div>
+    </main>
+  </div>
+
+  <script src="roadmap.js"></script>
+</body>
+</html>
