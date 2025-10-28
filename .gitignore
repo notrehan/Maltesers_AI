@@ -1,3 +1,4 @@
 .env
 .env.local
 node_modules
+Quiz_ai_app-main/backend/.env

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en" class="">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adaptive Quiz Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        // Tailwind dark mode configuration
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+        /* --- UPDATED BACKGROUND --- */
+        body {
+            font-family: "Inter", Arial, sans-serif;
+            background-color: #ffffff;
+            background-image:
+                radial-gradient(circle at top right, rgba(255, 106, 0, 0.475) 0%, transparent 40%),
+                radial-gradient(circle at bottom left, rgba(255, 106, 0, 0.66) 0%, transparent 40%);
+            color: #222;
+        }
+        .dark body {
+            background-color: #111; /* Dark base color */
+            /* Matching radial gradients for dark mode */
+            background-image:
+                radial-gradient(circle at top right, rgba(255, 106, 0, 0.3) 0%, transparent 40%),
+                radial-gradient(circle at bottom left, rgba(255, 106, 0, 0.4) 0%, transparent 40%);
+        }
+        .card {
+            background-color: white;
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease-in-out;
+            border: 1px solid #e5e7eb;
+        }
+        .dark .card {
+            background-color: #161b22;
+            border-color: #30363d;
+        }
+        .btn {
+            transition: all 0.2s ease-in-out;
+            border-radius: 0.75rem;
+            font-weight: 600;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        /* Primary button style */
+        .btn-primary {
+            background-color: #400000;
+            color: white;
+            border: 1px solid #2b0000;
+        }
+        .btn-primary:hover {
+            background-color: #5a0000;
+            /* red glow */
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+        }
+
+        .answer-btn {
+            border: 2px solid #e5e7eb;
+            background-color: #f9fafb;
+            color: #374151;
+            font-weight: 500;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: left;
+            transition: all 0.2s ease-in-out;
+        }
+        .dark .answer-btn {
+            border-color: #30363d;
+            background-color: #0d1117;
+            color: #c9d1d9;
+        }
+        .answer-btn:hover:not(:disabled) {
+            border-color: #ef4444; /* red-500 */
+            background-color: #fee2e2; /* red-50 */
+        }
+        .dark .answer-btn:hover:not(:disabled) {
+            border-color: #f87171; /* red-400 */
+            background-color: #450a0a; /* red-950 */
+        }
+        .answer-btn.correct {
+            background-color: #10B981;
+            color: white;
+            border-color: #059669;
+        }
+        .dark .answer-btn.correct { background-color: #16a34a; border-color: #15803d; }
+        .answer-btn.correct .icon {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .answer-btn.incorrect {
+            background-color: #EF4444;
+            color: white;
+            border-color: #DC2626;
+        }
+        .dark .answer-btn.incorrect { background-color: #dc2626; border-color: #b91c1c; }
+        .answer-btn.incorrect .icon {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .answer-btn.disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+        
+        #progress-bar {
+            transition: width 0.5s ease-in-out;
+        }
+        
+        #history-drawer.open, #features-drawer.open {
+            transform: translateX(0);
+        }
+        #history-drawer-overlay.open, #features-drawer-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 overflow-hidden dark:text-gray-300">
+
+    <div id="app" class="w-full max-w-2xl">
+        <div class="card relative">
+             <button id="open-features-btn" class="absolute top-4 left-4 p-2 rounded-full text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </button>
+            <div id="topic-selection">
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">AI Quiz Generator</h1>
+                    <p class="text-gray-500 dark:text-gray-400">Test your knowledge on any topic or document.</p>
+                </div>
+                <div class="space-y-4">
+                    <div>
+                        <input type="text" id="topic-input" placeholder="e.g., 'The Renaissance'" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:outline-none transition dark:bg-gray-800 dark:border-gray-600 dark:placeholder-gray-400">
+                    </div>
+                    <div class="relative flex py-2 items-center">
+                        <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                        <span class="flex-shrink mx-4 text-gray-400 dark:text-gray-500 text-sm font-semibold">OR</span>
+                        <div class="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
+                    </div>
+                    <div>
+                        <label for="pdf-upload" class="group flex items-center justify-center w-full px-4 py-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:bg-gray-100 transition dark:bg-gray-800 dark:border-gray-600 dark:hover:bg-gray-700">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-gray-400 mr-3 group-hover:text-red-500 dark:group-hover:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            <span class="text-gray-600 group-hover:text-red-500 dark:text-gray-300 dark:group-hover:text-red-400 font-medium">Upload a PDF document</span>
+                        </label>
+                        <input type="file" id="pdf-upload" accept=".pdf" class="hidden"/>
+                        <div id="file-name-display" class="text-sm text-center text-gray-500 mt-2 truncate"></div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 mt-8">
+                    <button id="start-quiz-btn" class="w-full py-3 px-6 btn btn-primary">Start Quiz</button>
+                    <button id="open-drawer-btn" class="w-full bg-white text-gray-700 border border-gray-300 py-3 px-6 btn hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">View History</button>
+                </div>
+                 <div id="error-message" class="text-red-500 text-center mt-4 hidden"></div>
+            </div>
+
+            <div id="quiz-view" class="hidden">
+                 <div id="quiz-header" class="mb-6">
+                     <div class="flex justify-between items-center mb-2">
+                         <h2 id="quiz-topic" class="text-xl font-bold text-gray-800 dark:text-gray-100 truncate pr-4"></h2>
+                         <div class="text-lg font-semibold text-red-700 bg-red-100 px-3 py-1 rounded-full dark:bg-red-900 dark:text-red-300">
+                             <span id="score">0</span> / 10
+                         </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div id="progress-bar" class="bg-red-500 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <div id="question-container">
+                    </div>
+                 <div id="loading-spinner" class="hidden text-center py-8">
+                     <div class="w-12 h-12 border-4 border-red-200 border-t-red-600 rounded-full animate-spin mx-auto dark:border-red-700 dark:border-t-red-400"></div>
+                     <p class="mt-4 text-gray-500 dark:text-gray-400">Generating the next question...</p>
+                </div>
+                <div id="feedback" class="mt-6 text-center font-semibold text-lg"></div>
+                <button id="next-question-btn" class="hidden w-full py-3 px-6 btn btn-primary mt-6">Next Question</button>
+            </div>
+
+            <div id="results-view" class="hidden text-center">
+                 <h1 class="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">Quiz Complete!</h1>
+                 <p class="text-lg text-gray-500 dark:text-gray-400 mb-4">Topic: <span id="final-topic" class="font-semibold text-gray-600 dark:text-gray-300"></span></p>
+                
+                 <div class="my-8">
+                     <p class="text-lg text-gray-600 dark:text-gray-400 mb-2">Your Final Score:</p>
+                     <div class="text-7xl font-bold text-[#400000] dark:text-red-400" id="final-score"></div>
+                </div>
+
+                 <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                     <button id="get-summary-btn" class="w-full sm:w-auto bg-green-600 text-white py-3 px-6 btn shadow-md">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2" viewBox="0 0 20 20" fill="currentColor">
+                             <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        Get AI Summary
+                    </button>
+                     <button id="new-quiz-btn" class="w-full sm:w-auto py-3 px-6 btn btn-primary shadow-md">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block -mt-1 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                             <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                        </svg>
+                        Home
+                    </button>
+                </div>
+                
+                <div id="summary-container" class="hidden mt-8 text-left p-6 bg-gray-50 rounded-xl border border-gray-200 dark:bg-gray-800 dark:border-gray-700">
+                    <div id="summary-loading" class="text-center">
+                        <div class="w-8 h-8 border-4 border-gray-200 border-t-gray-600 rounded-full animate-spin mx-auto dark:border-gray-700 dark:border-t-gray-400"></div>
+                        <p class="mt-3 text-gray-500 dark:text-gray-400">Your AI tutor is analyzing your results...</p>
+                    </div>
+                    <div id="summary-content" class="hidden">
+                        <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3">Performance Summary</h3>
+                        <p id="summary-text" class="text-gray-700 dark:text-gray-300 whitespace-pre-wrap"></p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        
+        <script>
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.11.338/pdf.worker.min.js';
+        </script>
+    </div>
+
+    <div id="features-drawer-overlay" class="fixed inset-0 bg-black bg-opacity-0 z-40 hidden transition-opacity duration-300 pointer-events-none"></div>
+    <div id="features-drawer" class="fixed top-0 left-0 h-full w-full max-w-xs bg-white shadow-xl z-50 transform -translate-x-full transition-transform duration-300 ease-in-out dark:bg-gray-800">
+        <div class="p-6 flex justify-between items-center border-b dark:border-gray-700">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Settings</h2>
+            <button id="close-features-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors dark:hover:bg-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-6">
+            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Appearance</h3>
+            <div class="flex items-center justify-between bg-gray-100 dark:bg-gray-700 rounded-lg p-2">
+                <span class="font-medium text-gray-800 dark:text-gray-200">Theme</span>
+                <div class="flex items-center p-1 bg-gray-200 dark:bg-gray-900 rounded-md">
+                    <button id="theme-light-btn" class="p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 14.95a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414l-.707.707zm-2.12-10.607a1 1 0 00-1.414 1.414l.707.707a1 1 0 101.414-1.414l-.707-.707zM3 11a1 1 0 100-2H2a1 1 0 100 2h1z"/></svg>
+                    </button>
+                    <button id="theme-dark-btn" class="p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" /></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="history-drawer-overlay" class="fixed inset-0 bg-black bg-opacity-0 z-40 hidden transition-opacity duration-300 pointer-events-none"></div>
+    <div id="history-drawer" class="fixed top-0 right-0 h-full w-full max-w-md bg-white shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out dark:bg-gray-800">
+        <div class="p-6 flex justify-between items-center border-b dark:border-gray-700">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-100">Quiz History</h2>
+            <button id="close-drawer-btn" class="p-2 rounded-full hover:bg-gray-100 transition-colors dark:hover:bg-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="p-6 overflow-y-auto h-[calc(100%-73px)]">
+            <ul id="history-list" class="space-y-4">
+                </ul>
+             <button id="clear-history-btn" class="w-full text-center text-sm text-red-500 hover:text-red-700 mt-6 py-2 rounded-lg transition-colors">Clear History</button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Full script is attached here for completeness ---
+        const topicSelectionView = document.getElementById('topic-selection');
+        const quizView = document.getElementById('quiz-view');
+        const resultsView = document.getElementById('results-view');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const topicInput = document.getElementById('topic-input');
+        const quizTopic = document.getElementById('quiz-topic');
+        const questionContainer = document.getElementById('question-container');
+        const scoreDisplay = document.getElementById('score');
+        const feedback = document.getElementById('feedback');
+        const nextQuestionBtn = document.getElementById('next-question-btn');
+        const newQuizBtn = document.getElementById('new-quiz-btn');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const finalTopicDisplay = document.getElementById('final-topic');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const errorMessage = document.getElementById('error-message');
+        const pdfUpload = document.getElementById('pdf-upload');
+        const fileNameDisplay = document.getElementById('file-name-display');
+        const historyList = document.getElementById('history-list');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        const getSummaryBtn = document.getElementById('get-summary-btn');
+        const summaryContainer = document.getElementById('summary-container');
+        const summaryLoading = document.getElementById('summary-loading');
+        const summaryContent = document.getElementById('summary-content');
+        const summaryText = document.getElementById('summary-text');
+        const progressBar = document.getElementById('progress-bar');
+        const historyDrawer = document.getElementById('history-drawer');
+        const historyDrawerOverlay = document.getElementById('history-drawer-overlay');
+        const openDrawerBtn = document.getElementById('open-drawer-btn');
+        const closeDrawerBtn = document.getElementById('close-drawer-btn');
+        const featuresDrawer = document.getElementById('features-drawer');
+        const featuresDrawerOverlay = document.getElementById('features-drawer-overlay');
+        const openFeaturesBtn = document.getElementById('open-features-btn');
+        const closeFeaturesBtn = document.getElementById('close-features-btn');
+        const themeLightBtn = document.getElementById('theme-light-btn');
+        const themeDarkBtn = document.getElementById('theme-dark-btn');
+
+        let score = 0;
+        let difficulty = 'easy';
+        let currentContext = '';
+        let quizTitle = '';
+        let isTopicBasedQuiz = false;
+        let questionCount = 0;
+        const MAX_QUESTIONS = 10;
+        let askedQuestions = [];
+        let quizSessionData = [];
+
+        function openDrawer(drawer, overlay) {
+            overlay.classList.remove('hidden');
+            overlay.classList.add('open');
+            drawer.classList.add('open');
+        }
+
+        function closeDrawer(drawer, overlay) {
+            overlay.classList.remove('open');
+            drawer.classList.remove('open');
+            setTimeout(() => overlay.classList.add('hidden'), 300);
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+                themeDarkBtn.classList.add('btn-primary');
+                themeLightBtn.classList.remove('btn-primary');
+            } else {
+                document.documentElement.classList.remove('dark');
+                themeLightBtn.classList.add('btn-primary');
+                themeDarkBtn.classList.remove('btn-primary');
+            }
+            localStorage.setItem('quizTheme', theme);
+        }
+        
+        async function extractTextFromPdf(file) {
+            const loadingTask = pdfjsLib.getDocument(URL.createObjectURL(file));
+            const pdf = await loadingTask.promise;
+            let allText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map(item => item.str).join(' ');
+                allText += pageText + '\n\n';
+            }
+            return allText;
+        }
+
+        async function callGemini(systemPrompt, userPrompt, isJson = true) {
+            const backendApiUrl = 'http://localhost:3001/api/generate';
+            try {
+                const response = await fetch(backendApiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ systemPrompt, userPrompt, isJson })
+                });
+                if (!response.ok) {
+                    const errorResult = await response.json();
+                    throw new Error(`API Error: ${response.status} - ${errorResult.error}`);
+                }
+                const result = await response.json();
+                return result.text;
+            } catch (error) {
+                console.error("Backend API Error:", error);
+                errorMessage.textContent = "An error occurred. Is the backend server running?";
+                errorMessage.classList.remove('hidden');
+                loadingSpinner.classList.add('hidden');
+                topicSelectionView.classList.remove('hidden');
+                quizView.classList.add('hidden');
+                return null;
+            }
+        }
+
+        async function getQuizQuestion(sourceData, currentDifficulty, isTopic, previousQuestions) {
+            let systemPrompt = '';
+            let userPrompt = '';
+            const uniqueInstruction = previousQuestions.length > 0 
+                ? `IMPORTANT: Do not repeat questions. Generate a new question that is different from these previous questions: ${JSON.stringify(previousQuestions)}` 
+                : '';
+
+            if (isTopic) {
+                 systemPrompt = `You are an expert quiz master. Generate a single multiple-choice question on the given topic. The question must be of '${currentDifficulty}' difficulty. Provide the response in a valid JSON format with keys: "question", "options" (array of 4 strings), and "answer". Your entire response MUST be only the JSON object itself. ${uniqueInstruction}`;
+                userPrompt = `Topic: ${sourceData}`;
+            } else {
+                 systemPrompt = `You are an expert quiz master. Generate a single multiple-choice question based ONLY on the provided context. The question must be of '${currentDifficulty}' difficulty. Provide the response in a valid JSON format with keys: "question", "options" (array of 4 strings), and "answer". Your entire response MUST be only the JSON object itself. ${uniqueInstruction}`;
+                userPrompt = `Context: ${sourceData}`;
+            }
+            
+            const jsonText = await callGemini(systemPrompt, userPrompt);
+            if (!jsonText) return null;
+
+            try {
+                const cleanedJson = jsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+                return JSON.parse(cleanedJson);
+            } catch(e) {
+                console.error("Failed to parse JSON from model:", e, jsonText);
+                return null;
+            }
+        }
+        
+        async function getPerformanceSummary() {
+            summaryContainer.classList.remove('hidden');
+            summaryContent.classList.add('hidden');
+            summaryLoading.classList.remove('hidden');
+            getSummaryBtn.disabled = true;
+            getSummaryBtn.classList.add('opacity-50');
+
+            const systemPrompt = `You are an expert, encouraging tutor. Analyze a student's quiz results and provide a brief, helpful summary (2-3 paragraphs). Start with encouragement, point out topics they understand well, and gently highlight areas for improvement.`;
+            const userPrompt = `The quiz was on the topic: "${quizTitle}". Here are the student's results:\n${JSON.stringify(quizSessionData, null, 2)}`;
+
+            const summary = await callGemini(systemPrompt, userPrompt, false);
+            
+            if(summary) {
+                summaryText.textContent = summary;
+            } else {
+                summaryText.textContent = "Sorry, I couldn't generate a summary at this time.";
+            }
+            summaryLoading.classList.add('hidden');
+            summaryContent.classList.remove('hidden');
+        }
+
+        function displayQuestion(q) {
+            loadingSpinner.classList.add('hidden');
+            questionContainer.classList.remove('hidden');
+            questionContainer.innerHTML = '';
+            feedback.innerHTML = '';
+            nextQuestionBtn.classList.add('hidden');
+            askedQuestions.push(q.question);
+            progressBar.style.width = `${(questionCount / MAX_QUESTIONS) * 100}%`;
+
+            const questionText = document.createElement('p');
+            questionText.className = 'text-xl font-semibold text-gray-800 dark:text-gray-100 mb-6';
+            questionText.textContent = `Q${questionCount + 1}: ${q.question}`;
+            questionContainer.appendChild(questionText);
+
+            const optionsGrid = document.createElement('div');
+            optionsGrid.className = 'grid grid-cols-1 gap-4';
+            const shuffledOptions = q.options.sort(() => Math.random() - 0.5);
+
+            shuffledOptions.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'answer-btn flex items-center w-full';
+                button.innerHTML = `<span class="icon flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 font-bold flex items-center justify-center mr-4 dark:bg-gray-600 dark:text-gray-200">${String.fromCharCode(65 + index)}</span><span class="flex-1">${option}</span>`;
+                button.onclick = () => handleAnswer(q, option);
+                optionsGrid.appendChild(button);
+            });
+            questionContainer.appendChild(optionsGrid);
+        }
+
+        function handleAnswer(questionData, selectedOption) {
+            const { question, options, answer } = questionData;
+            quizSessionData.push({ question, options, selectedAnswer: selectedOption, correctAnswer: answer });
+            const buttons = document.querySelectorAll('.answer-btn');
+            let answeredCorrectly = false;
+
+            if (selectedOption === answer) {
+                score++;
+                scoreDisplay.textContent = score;
+                feedback.textContent = 'Correct!';
+                feedback.className = 'mt-6 text-center font-semibold text-lg text-green-600 dark:text-green-400';
+                answeredCorrectly = true;
+            } else {
+                feedback.textContent = `Correct answer: ${answer}`;
+                feedback.className = 'mt-6 text-center font-semibold text-lg text-red-600 dark:text-red-400';
+            }
+
+            buttons.forEach(button => {
+                button.disabled = true;
+                button.classList.add('disabled');
+                const optionText = button.querySelector('span.flex-1').textContent;
+                if (optionText === answer) button.classList.add('correct');
+                else if (optionText === selectedOption) button.classList.add('incorrect');
+            });
+
+            adjustDifficulty(answeredCorrectly);
+            questionCount++;
+            if (questionCount >= MAX_QUESTIONS) nextQuestionBtn.textContent = 'Show Results';
+            progressBar.style.width = `${(questionCount / MAX_QUESTIONS) * 100}%`;
+            nextQuestionBtn.classList.remove('hidden');
+        }
+
+        function adjustDifficulty(correct) {
+            if (correct) {
+                if (difficulty === 'easy') difficulty = 'medium';
+                else if (difficulty === 'medium') difficulty = 'hard';
+            } else {
+                if (difficulty === 'hard') difficulty = 'medium';
+                else if (difficulty === 'medium') difficulty = 'easy';
+            }
+        }
+
+        async function loadNextQuestion() {
+            if (questionCount >= MAX_QUESTIONS) {
+                showResults();
+                return;
+            }
+            questionContainer.classList.add('hidden');
+            loadingSpinner.classList.remove('hidden');
+            feedback.innerHTML = '';
+            nextQuestionBtn.classList.add('hidden');
+            const questionData = await getQuizQuestion(currentContext, difficulty, isTopicBasedQuiz, askedQuestions);
+            if(questionData) {
+                displayQuestion(questionData);
+            } else {
+                loadingSpinner.classList.add('hidden');
+                feedback.textContent = "The AI failed to generate the next question. The quiz will end now.";
+                feedback.className = 'mt-6 text-center font-semibold text-lg text-red-600 dark:text-red-400';
+                setTimeout(showResults, 2500);
+            }
+        }
+
+        function showResults() {
+            quizView.classList.add('hidden');
+            resultsView.classList.remove('hidden');
+            finalTopicDisplay.textContent = quizTitle;
+            finalScoreDisplay.textContent = `${score} / ${MAX_QUESTIONS}`;
+            saveQuizResult(quizTitle, score, MAX_QUESTIONS, currentContext, isTopicBasedQuiz);
+            displayQuizHistory();
+        }
+        
+        function resetQuiz() {
+            score = 0;
+            questionCount = 0;
+            difficulty = 'easy';
+            currentContext = '';
+            quizTitle = '';
+            isTopicBasedQuiz = false;
+            askedQuestions = [];
+            quizSessionData = [];
+            scoreDisplay.textContent = '0';
+            progressBar.style.width = '0%';
+            topicInput.value = '';
+            topicInput.disabled = false;
+            pdfUpload.value = ''; 
+            fileNameDisplay.textContent = '';
+            nextQuestionBtn.textContent = 'Next Question';
+            summaryContainer.classList.add('hidden');
+            summaryContent.classList.add('hidden');
+            summaryLoading.classList.remove('hidden');
+            summaryText.textContent = '';
+            getSummaryBtn.disabled = false;
+            getSummaryBtn.classList.remove('opacity-50');
+            resultsView.classList.add('hidden');
+            quizView.classList.add('hidden');
+            topicSelectionView.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+        }
+
+        function getQuizHistory() {
+            return JSON.parse(localStorage.getItem('quizHistory')) || [];
+        }
+
+        function saveQuizResult(topic, finalScore, maxScore, context, isTopicBased) {
+            const history = getQuizHistory();
+            const newResult = { topic, score: finalScore, maxScore, date: new Date().toLocaleString(), context, isTopicBased };
+            history.unshift(newResult); 
+            localStorage.setItem('quizHistory', JSON.stringify(history.slice(0, 50)));
+        }
+
+        function displayQuizHistory() {
+            const history = getQuizHistory();
+            historyList.innerHTML = ''; 
+            if (history.length > 0) {
+                history.forEach((result, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 p-4 rounded-xl animate-fade-in dark:bg-gray-700';
+                    const truncatedTopic = result.topic.length > 35 ? result.topic.substring(0, 35) + '...' : result.topic;
+                    li.innerHTML = `<div class="flex-1 mb-3 sm:mb-0"><p class="font-semibold text-gray-800 dark:text-gray-200">${truncatedTopic}</p><p class="text-xs text-gray-500 dark:text-gray-400">${result.date}</p></div><div class="flex items-center gap-4 w-full sm:w-auto"><div class="font-bold text-lg text-center flex-1 ${result.score / result.maxScore >= 0.7 ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}">${result.score}/${result.maxScore}</div><button class="retake-btn text-sm bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-lg hover:bg-red-200 transition dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800" data-index="${index}">Retake</button></div>`;
+                    historyList.appendChild(li);
+                });
+            } else {
+                 historyList.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400">You have no quiz history yet.</p>';
+            }
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('quizHistory');
+            displayQuizHistory();
+        }
+        
+        async function startQuiz(context, title, isTopicBased) {
+            resetQuiz();
+            currentContext = context;
+            quizTitle = title;
+            isTopicBasedQuiz = isTopicBased;
+            topicSelectionView.classList.add('hidden');
+            quizView.classList.remove('hidden');
+            quizTopic.textContent = `${quizTitle}`;
+            await loadNextQuestion();
+        }
+
+        startQuizBtn.addEventListener('click', async () => {
+            const topic = topicInput.value.trim();
+            const file = pdfUpload.files[0];
+            if (!topic && !file) {
+                errorMessage.textContent = 'Please enter a topic or upload a PDF to start.';
+                errorMessage.classList.remove('hidden');
+                return;
+            }
+            errorMessage.classList.add('hidden');
+            let context = '', title = '', isTopicBased = false;
+            startQuizBtn.disabled = true;
+            startQuizBtn.textContent = 'Generating Quiz...';
+            if (file) {
+                try {
+                    context = await extractTextFromPdf(file);
+                    title = file.name;
+                    isTopicBased = false;
+                } catch (error) {
+                    console.error("Error processing PDF:", error);
+                    errorMessage.textContent = "Could not read the PDF file. Please try another one.";
+                    errorMessage.classList.remove('hidden');
+                    startQuizBtn.disabled = false;
+                    startQuizBtn.textContent = 'Start Quiz';
+                    return;
+                }
+            } else {
+                context = topic;
+                title = topic;
+                isTopicBased = true;
+            }
+            if (context.length < 2 && !isTopicBased) { 
+                errorMessage.textContent = 'The document or topic is too short to generate a meaningful quiz.';
+                errorMessage.classList.remove('hidden');
+                startQuizBtn.disabled = false;
+                startQuizBtn.textContent = 'Start Quiz';
+                return;
+            }
+            await startQuiz(context, title, isTopicBased);
+            startQuizBtn.disabled = false;
+            startQuizBtn.textContent = 'Start Quiz';
+        });
+        
+        historyList.addEventListener('click', (e) => {
+            if (e.target.classList.contains('retake-btn')) {
+                const index = e.target.dataset.index;
+                const history = getQuizHistory();
+                const quizToRetake = history[index];
+                if (quizToRetake) {
+                    closeDrawer(historyDrawer, historyDrawerOverlay);
+                    setTimeout(() => startQuiz(quizToRetake.context, quizToRetake.topic, quizToRetake.isTopicBased), 300);
+                }
+            }
+        });
+
+        openDrawerBtn.addEventListener('click', () => openDrawer(historyDrawer, historyDrawerOverlay));
+        closeDrawerBtn.addEventListener('click', () => closeDrawer(historyDrawer, historyDrawerOverlay));
+        historyDrawerOverlay.addEventListener('click', () => closeDrawer(historyDrawer, historyDrawerOverlay));
+        openFeaturesBtn.addEventListener('click', () => openDrawer(featuresDrawer, featuresDrawerOverlay));
+        closeFeaturesBtn.addEventListener('click', () => closeDrawer(featuresDrawer, featuresDrawerOverlay));
+        featuresDrawerOverlay.addEventListener('click', () => closeDrawer(featuresDrawer, featuresDrawerOverlay));
+        themeLightBtn.addEventListener('click', () => applyTheme('light'));
+        themeDarkBtn.addEventListener('click', () => applyTheme('dark'));
+        topicInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') startQuizBtn.click(); });
+        pdfUpload.addEventListener('change', () => {
+            if (pdfUpload.files.length > 0) {
+                fileNameDisplay.textContent = `Selected: ${pdfUpload.files[0].name}`;
+                topicInput.value = ''; 
+                topicInput.disabled = true;
+                errorMessage.classList.add('hidden');
+            } else {
+                fileNameDisplay.textContent = '';
+                topicInput.disabled = false;
+            }
+        });
+        nextQuestionBtn.addEventListener('click', loadNextQuestion);
+        newQuizBtn.addEventListener('click', resetQuiz);
+        clearHistoryBtn.addEventListener('click', clearHistory);
+        getSummaryBtn.addEventListener('click', getPerformanceSummary);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            displayQuizHistory();
+            const savedTheme = localStorage.getItem('quizTheme') || 'light';
+            applyTheme(savedTheme);
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maltesers AI</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* Splash screen container */
+    #splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f5fffa;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      z-index: 9999;
+      transition: opacity 1s ease-out;
+    }
+
+    #splash.fade-out {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .logo img {
+      width: 120px;
+      animation: bounce 2s infinite;
+    }
+
+    .logo h1 {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #e63946;
+      margin: 10px 0 20px 0;
+    }
+
+    .loading-text {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .progress-bar {
+      width: 250px;
+      height: 20px;
+      border: 2px solid #333;
+      border-radius: 25px;
+      overflow: hidden;
+    }
+
+    .progress {
+      height: 100%;
+      width: 0;
+      background: #e63946;
+      animation: load 3s forwards;
+    }
+
+    @keyframes load {
+      0% { width: 0; }
+      100% { width: 100%; }
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Main content (hidden under splash) */
+    #main-content {
+      display: none;
+      padding: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div class="logo" style="text-align:center;">
+      <!-- Embedded Base64 Logo -->
+      <img src="https://i.postimg.cc/02jVD9qP/maltesers-logo.png" 
+           alt="Maltesers AI Website Logo">
+      <h1>Maltesers AI</h1>
+    </div>
+    <div class="loading-text">LOADING...</div>
+    <div class="progress-bar">
+      <div class="progress"></div>
+    </div>
+  </div>
+
+  <!-- Main Website Content -->
+  <div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-content">
+        <div class="sidebar-logo">
+          <img src="/images/logo.ico" alt="Maltesers.ai Logo" class="logo-img"/>
+          <span class="logo-text">Maltesers.ai</span>
+        </div>
+
+        <div class="nav">
+          <button class="icon-btn" title="Chat">
+            <i class="fas fa-comment-dots chat-icon"></i>
+            <span class="chat-text">Previous Conversation</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+
+    <!-- Main -->
+    <main class="main">
+      <div class="center-box">
+        <h1 class="title">I'm Maltesers, How can I help?</h1>
+        <p class="subtitle">Your AI roadmap assistant</p>
+        <div class="input-area">
+          <textarea id="userInput" placeholder="Enter a topic to learn..."></textarea>
+          <button id="generateBtn">Generate</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  
+  <script>
+    // Hide splash screen after 3 seconds
+    setTimeout(() => {
+      document.getElementById('splash').classList.add('fade-out');
+      setTimeout(() => {
+        document.getElementById('splash').style.display = 'none';
+        document.getElementById('main-content').style.display = 'block';
+      }, 1000); // wait for fade-out
+    }, 3000);
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html>
